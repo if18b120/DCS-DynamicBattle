@@ -7,3 +7,4 @@ while trigger.misc.getZone(zonename .. zonenum) ~= nil do
     zonenum = zonenum + 1
 end
 
+--https://stackoverflow.com/questions/563198/how-do-you-detect-where-two-line-segments-intersect
