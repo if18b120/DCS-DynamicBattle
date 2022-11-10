@@ -1,6 +1,9 @@
 local zones = {}
 local zonename = 'CombatZone'
 local zonenum = 1
+
+debug = false
+
 --[[
 while trigger.misc.getZone(zonename .. zonenum) ~= nil do
     table.insert(zones, trigger.misc.getZone(zonename .. zonenum))
@@ -40,4 +43,13 @@ function AddV2(V1, V2)
     return {x = V1.x + V2.x, z = V1.z + V2.z}
 end
 
---print(GetIntersect({x = 1, z = 1}, {x = 10, z = 10}, {x = 1, z = 1}, {x = 9, z = 10}))
+if debug then
+    assert(GetIntersect({x = 1, z = 1}, {x = 10, z = 10}, {x = 0, z = 0}, {x = 9, z = 10}) == false)
+    assert(GetIntersect({x = 1, z = 1}, {x = 10, z = 10}, {x = 10, z = 0}, {x = 0, z = 10}) == true)
+    assert(GetIntersect({x = 1, z = 1}, {x = 10, z = 10}, {x = 0, z = 1}, {x = 9, z = 10}) == false)
+    assert(GetIntersect({x = 1, z = 1}, {x = 10, z = 10}, {x = 0, z = 1}, {x = 9, z = 9}) == true)
+    assert(GetIntersect({x = 1, z = 1}, {x = 10, z = 10}, {x = 2, z = 0}, {x = 12, z = 12}) == false)
+    assert(GetIntersect({x = 1, z = 1}, {x = 10, z = 10}, {x = 2, z = 0}, {x = 9, z = 10}) == true)
+    assert(GetIntersect({x = 10, z = 1}, {x = 1, z = 10}, {x = 2, z = 0}, {x = 12, z = 12}) == true)
+    assert(GetIntersect({x = 10, z = 1}, {x = 1, z = 10}, {x = 12, z = 2}, {x = 2, z = 12}) == false)
+end
