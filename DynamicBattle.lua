@@ -82,19 +82,43 @@ function DynamicBattle:generate(zonename)
 end
 debug = false
 
---https://stackoverflow.com/questions/563198/how-do-you-detect-where-two-line-segments-intersect
-
-function DynamicBattle.findPath(start, stop, connections, path)
-    local selected
-    for key, connection in pairs(connections) do
-        if connection.p1 == start or connection.p2 == start then
-            if selected == nil then 
-                selected = connection
-            elseif selected.d >= connection.d then
-                selected = connection
+function FindPath(start, stop, connections, zones)
+    local selected, found = start, false
+    local path = {}
+    table.insert(path, start)
+    while !found do
+        local best = { con = nil, weight = -1}
+        local weight
+        for index, connection in ipairs(connections) do
+            if connection.p1 == selected then
+                weight = connection.d + GetV2Distance(zones[connection.p2].point, zones[stop].point)
+                if weight < best.weight or best.weight == -1 and Find(path, connection.p2) == 0 then
+                    best.weight = weight
+                    best.con = index
+                end
+            elseif connection.p2 == selected then
+                weight = connection.d + GetV2Distance(zones[connection.p1].point, zones[stop].point)
+                if weight < best.weight or best.weight == -1 and Find(path, connection.p1) == 0 then
+                    best.weight = weight
+                    best.con = index
+                end
             end
         end
+        if best.con == nil then
+            return nil
+        end
+        if best.p1 == selected then
+            table.insert(path, connections[best.con].p2)
+            selected = connections[best.con].p2
+        else
+            table.insert(path, connections[best.con].p1)
+            selected = connections[best.con].p1
+        end
+        if connections[best.con].p1 == stop or connections[best.con].p2 == stop then
+            found = true
+        end
     end
+    return path
 end
 
 function GetV2(A, B)
@@ -109,6 +133,7 @@ function GetV2Distance(A, B)
     return GetV2Magnitude(GetV2(A, B))
 end
 
+--https://stackoverflow.com/questions/563198/how-do-you-detect-where-two-line-segments-intersect
 function GetIntersect(S1P1, S1P2, S2P1, S2P2)
     local V1 = GetV2(S1P1, S1P2)
     local V2 = GetV2(S2P1, S2P2)
@@ -147,6 +172,15 @@ function CmpConnection(C1, C2)
     return commonpoints
 end
 
+function Find(table, value)
+    for i = 1, #table do
+        if table[i] == value then
+            return i
+        end
+    end
+    return 0
+end
+
 if debug then
     assert(GetIntersect({x = 1, z = 1}, {x = 10, z = 10}, {x = 0, z = 0}, {x = 9, z = 10}) == false)
     assert(GetIntersect({x = 1, z = 1}, {x = 10, z = 10}, {x = 10, z = 0}, {x = 0, z = 10}) == true)
@@ -156,6 +190,8 @@ if debug then
     assert(GetIntersect({x = 1, z = 1}, {x = 10, z = 10}, {x = 2, z = 0}, {x = 9, z = 10}) == true)
     assert(GetIntersect({x = 10, z = 1}, {x = 1, z = 10}, {x = 2, z = 0}, {x = 12, z = 12}) == true)
     assert(GetIntersect({x = 10, z = 1}, {x = 1, z = 10}, {x = 12, z = 2}, {x = 2, z = 12}) == false)
-end
 
-DynamicBattle:generate('CombatZone')
+
+else
+    DynamicBattle:generate('CombatZone')
+end
