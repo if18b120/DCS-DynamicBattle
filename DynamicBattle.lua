@@ -81,10 +81,15 @@ function DynamicBattle:generate(zonename)
             end
         end
     end
-
-    trigger.action.outText("drawing connections", 10, false)
+    local drawid = 1
+    trigger.action.outText("drawing", 10, false)
+    for key, zone in pairs(self.zones) do
+        drawid = drawid + key
+        trigger.action.circleToAll(-1, drawid, zone.point, zone.radius, {1, 0, 0, 1}, {1, 0, 0, 0.2}, 1, true)
+    end
     for key, connection in pairs(self.connections) do
-        trigger.action.lineToAll(-1, key, self.zones[connection.p1].point, self.zones[connection.p2].point, {1, 0, 0, 1}, 1, true)
+        drawid = drawid + key
+        trigger.action.lineToAll(-1, drawid, self.zones[connection.p1].point, self.zones[connection.p2].point, {1, 0, 0, 1}, 1, true)
     end
 end
 debug = false
