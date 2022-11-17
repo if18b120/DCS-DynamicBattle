@@ -45,7 +45,7 @@ function DynamicBattle:generate(zonename)
 
     for outerkey, outerconnection in pairs(self.connections) do 
         for innerkey, innerconnection in pairs(self.connections) do 
-            if innerkey > outerkey and CmpConnection(outerconnection, innerconnection) ~= 0 then
+            if innerkey > outerkey and CmpConnection(outerconnection, innerconnection) == 0 then
                 if GetIntersect(outerconnection.p1, outerconnection.p2, innerconnection.p1, innerconnection.p2) then
                     if outerconnection.d >= innerconnection.d then
                         innerconnection = nil
@@ -54,6 +54,13 @@ function DynamicBattle:generate(zonename)
                     end
                 end
             end
+        end
+    end
+
+    for index, connection in ipairs(self.connections) do
+        local path, distance = FindPath(connection.p1, connection.p2, self.connections, self.zones, false)
+        if distance * 1.5 < connection.d then
+            self.connections[index] = nil
         end
     end
 
@@ -82,25 +89,29 @@ function DynamicBattle:generate(zonename)
 end
 debug = false
 
-function FindPath(start, stop, connections, zones)
+function FindPath(start, stop, connections, zones, directallowed)
     local selected, found = start, false
     local path = {}
-    table.insert(path, start)
+    local distance = 0
     while !found do
-        local best = { con = nil, weight = -1}
+        local best = { con = nil, weight = -1, d = 0}
         local weight
         for index, connection in ipairs(connections) do
-            if connection.p1 == selected then
-                weight = connection.d + GetV2Distance(zones[connection.p2].point, zones[stop].point)
-                if weight < best.weight or best.weight == -1 and Find(path, connection.p2) == 0 then
-                    best.weight = weight
-                    best.con = index
-                end
-            elseif connection.p2 == selected then
-                weight = connection.d + GetV2Distance(zones[connection.p1].point, zones[stop].point)
-                if weight < best.weight or best.weight == -1 and Find(path, connection.p1) == 0 then
-                    best.weight = weight
-                    best.con = index
+            if directallowed and not ((connection.p1 == start and connection.p2 == stop) or (connection.p2 == start and connection.p1 == stop)) then
+                if connection.p1 == selected then
+                    weight = connection.d + GetV2Distance(zones[connection.p2].point, zones[stop].point)
+                    if weight < best.weight or best.weight == -1 and Find(path, connection.p2) == 0 then
+                        best.weight = weight
+                        best.con = index
+                        best.d = connection.d
+                    end
+                elseif connection.p2 == selected then
+                    weight = connection.d + GetV2Distance(zones[connection.p1].point, zones[stop].point)
+                    if weight < best.weight or best.weight == -1 and Find(path, connection.p1) == 0 then
+                        best.weight = weight
+                        best.con = index
+                        best.d = connection.d
+                    end
                 end
             end
         end
@@ -114,11 +125,12 @@ function FindPath(start, stop, connections, zones)
             table.insert(path, connections[best.con].p1)
             selected = connections[best.con].p1
         end
+        distance = distance + best.d
         if connections[best.con].p1 == stop or connections[best.con].p2 == stop then
             found = true
         end
     end
-    return path
+    return path, distance
 end
 
 function GetV2(A, B)
@@ -190,8 +202,6 @@ if debug then
     assert(GetIntersect({x = 1, z = 1}, {x = 10, z = 10}, {x = 2, z = 0}, {x = 9, z = 10}) == true)
     assert(GetIntersect({x = 10, z = 1}, {x = 1, z = 10}, {x = 2, z = 0}, {x = 12, z = 12}) == true)
     assert(GetIntersect({x = 10, z = 1}, {x = 1, z = 10}, {x = 12, z = 2}, {x = 2, z = 12}) == false)
-
-
 else
     DynamicBattle:generate('CombatZone')
 end
