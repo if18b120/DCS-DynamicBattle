@@ -3,6 +3,7 @@ DynamicBattle = {
     -- zonename = 'CombatZone'
     connections = {}
 }
+debug = true
 --[[
 
 connection = {
@@ -15,16 +16,32 @@ connection = {
 
 function DynamicBattle:generate(zonename)
     local zonenum = 1
-    trigger.action.outText("creating zones", 10, false)
+    -- trigger.action.outText("creating zones", 10, false)
+    DebugPrint("creating zones")
+--[[
     while trigger.misc.getZone(zonename .. zonenum) ~= nil do
         table.insert(self.zones, trigger.misc.getZone(zonename .. zonenum))
         zonenum = zonenum + 1
     end
-    for i = 1, #self.zones do
-        env.info(self.zones[i].point.x .. " " .. self.zones[i].point.y .. " " .. self.zones[i].point.z .. " | " .. self.zones[i].radius, false)
-    end
-    trigger.action.outText(zonenum .. " zones found", 10, false)
-    trigger.action.outText("creating connections", 10, false)
+]]--
+    self.zones = {
+        {point = {x = -247702.09375, y = 0, z = 624390.625}, radius = 500.7864074707},
+        {point = {x = -245661.65625, y = 0, z = 623802.875}, radius = 1000.6583862305},
+        {point = {x = -243927.359375, y = 0, z = 620314.5}, radius = 1300.5815429688},
+        {point = {x = -241765.125, y = 0, z = 617048.375}, radius = 2300.3256835938},
+        {point = {x = -248186.53125, y = 0, z = 615831.375}, radius = 900.68402099609},
+        {point = {x = -248769.21875, y = 0, z = 609760.6875}, radius = 1400.5560302734},
+        {point = {x = -251630.359375, y = 0, z = 610257.875}, radius = 900.68402099609},
+        {point = {x = -254114, y = 0, z = 611357.5625}, radius = 600.76080322266},
+        {point = {x = -255117.203125, y = 0, z = 607210.1875}, radius = 1000.6583862305},
+        {point = {x = -252987.703125, y = 0, z = 606292.25}, radius = 800.70959472656},
+        {point = {x = -250523.890625, y = 0, z = 606794.5}, radius = 1500.5303955078},
+        {point = {x = -241161.953125, y = 0, z = 609933.4375}, radius = 1300.5815429688}
+    }
+    -- trigger.action.outText(zonenum .. " zones found", 10, false)
+    DebugPrint(#self.zones .. " zones found")
+    DebugPrint("creating connections")
+    -- trigger.action.outText("creating connections", 10, false)
     for outerkey, outerzone in pairs(self.zones) do
         for innerkey, innerzone in pairs(self.zones) do
             if outerkey ~= innerkey then 
@@ -46,7 +63,8 @@ function DynamicBattle:generate(zonename)
         end
     end
     local lastvalue, n = #self.connections, #self.connections
-    trigger.action.outText(#self.connections .. " connections created", 10, false)
+    DebugPrint(#self.connections .. " connections created")
+    -- trigger.action.outText(#self.connections .. " connections created", 10, false)
     local delcount = 0
     for outerkey, outerconnection in pairs(self.connections) do
         for innerkey, innerconnection in pairs(self.connections) do
@@ -68,19 +86,8 @@ function DynamicBattle:generate(zonename)
             end
         end
     end
-    trigger.action.outText(delcount .. " deleted", 10, false)
-    delcount = 0
-    for index, connection in pairs(self.connections) do
-        if self.connections[index] ~= nil then
-            local path, distance = FindPath(connection.p1, connection.p2, self.connections, self.zones, false)
-            trigger.action.outText(type(path), 10, false)
-            if distance ~= nil and distance * 1.5 < connection.d then
-                delcount = delcount + 1
-                self.connections[index] = nil
-            end
-        end
-    end
-    trigger.action.outText(delcount .. " deleted", 10, false)
+    -- trigger.action.outText(delcount .. " deleted", 10, false)
+    DebugPrint(delcount .. " deleted")
     for i = 1, n do
         if self.connections[i] == nil then
             for u = lastvalue, 1, -1 do
@@ -96,39 +103,77 @@ function DynamicBattle:generate(zonename)
             end
         end
     end
-    trigger.action.outText(#self.connections .. " connections left", 10, false)
+    lastvalue = n
+    delcount = 0
+    for index, connection in pairs(self.connections) do
+        if self.connections[index] ~= nil then
+            local path, distance = FindPath(connection.p1, connection.p2, self.connections, self.zones, false)
+            -- trigger.action.outText(type(path), 10, false)
+            DebugPrint(distance)
+            DebugPrint(connection.d)
+            DebugPrint(" ")
+            if distance ~= nil and distance < connection.d * 1.5 then
+                delcount = delcount + 1
+                self.connections[index] = nil
+            end
+        end
+    end
+    -- trigger.action.outText(delcount .. " deleted", 10, false)
+    DebugPrint(delcount .. " deleted")
+    for i = 1, n do
+        if self.connections[i] == nil then
+            for u = lastvalue, 1, -1 do
+                if u <= i then
+                    break
+                elseif self.connections[u] ~= nil then
+                    -- trigger.action.outText("patching " .. u .. " to " .. i, 10, false)
+                    self.connections[i] = self.connections[u]
+                    self.connections[u] = nil
+                    lastvalue = u
+                    break
+                end
+            end
+        end
+    end
+    -- trigger.action.outText(#self.connections .. " connections left", 10, false)
+    DebugPrint(#self.connections .. " connections left")
     local drawid = 1
-    trigger.action.outText("drawing", 10, false)
-    for key, zone in pairs(self.zones) do
-        drawid = drawid + key
-        trigger.action.circleToAll(-1, drawid, zone.point, zone.radius, {1, 0, 0, 1}, {1, 0, 0, 0.2}, 1, true)
-    end
-    for key, connection in pairs(self.connections) do
-        drawid = drawid + key
-        trigger.action.lineToAll(-1, drawid, self.zones[connection.p1].point, self.zones[connection.p2].point, {1, 0, 0, 1}, 1, true)
-    end
+    -- trigger.action.outText("drawing", 10, false)
+    -- for key, zone in pairs(self.zones) do
+    --     drawid = drawid + key
+    --     trigger.action.circleToAll(-1, drawid, zone.point, zone.radius, {1, 0, 0, 1}, {1, 0, 0, 0.2}, 1, true)
+    -- end
+    -- for key, connection in pairs(self.connections) do
+    --     drawid = drawid + key
+    --     trigger.action.lineToAll(-1, drawid, self.zones[connection.p1].point, self.zones[connection.p2].point, {1, 0, 0, 1}, 1, true)
+    -- end
 end
-debug = false
 
 function FindPath(start, stop, connections, zones, directallowed)
+    -- DebugPrint("start: " .. start .. ", stop: " .. stop)
     local selected, found = start, false
     local path = {}
+    table.insert(path, start)
     local distance = 0
     while not found do
         local best = { con = nil, weight = -1, d = 0}
         local weight
-        for index, connection in ipairs(connections) do
+        -- DebugPrint(#connections)
+        for index, connection in pairs(connections) do
+            -- DebugPrint("checking con " .. index)
             if directallowed or not ((connection.p1 == start and connection.p2 == stop) or (connection.p2 == start and connection.p1 == stop)) then
                 if connection.p1 == selected then
+                    -- DebugPrint("con valid")
                     weight = connection.d + GetV2Distance(zones[connection.p2].point, zones[stop].point)
-                    if weight < best.weight or best.weight == -1 and Find(path, connection.p2) == 0 then
+                    if (weight < best.weight or best.weight == -1) and Find(path, connection.p2) == 0 then
                         best.weight = weight
                         best.con = index
                         best.d = connection.d
                     end
                 elseif connection.p2 == selected then
+                    -- DebugPrint("con valid")
                     weight = connection.d + GetV2Distance(zones[connection.p1].point, zones[stop].point)
-                    if weight < best.weight or best.weight == -1 and Find(path, connection.p1) == 0 then
+                    if (weight < best.weight or best.weight == -1) and Find(path, connection.p1) == 0 then
                         best.weight = weight
                         best.con = index
                         best.d = connection.d
@@ -139,7 +184,8 @@ function FindPath(start, stop, connections, zones, directallowed)
         if best.con == nil then
             return nil
         end
-        if best.p1 == selected then
+        -- DebugPrint(selected)
+        if connections[best.con].p1 == selected then
             table.insert(path, connections[best.con].p2)
             selected = connections[best.con].p2
         else
@@ -150,7 +196,21 @@ function FindPath(start, stop, connections, zones, directallowed)
         if connections[best.con].p1 == stop or connections[best.con].p2 == stop then
             found = true
         end
+        -- local printpath = ""
+        -- for i = 1, #path do
+        --     printpath = printpath .. " " .. path[i]
+        -- end
+        -- DebugPrint(printpath .. " | " .. distance)
+        -- DebugPrint("best con: " .. connections[best.con].p1 .. " " .. connections[best.con].p2)
+        -- DebugPrint(printpath)
+        -- DebugPrint(Find(path, 4))
+        -- io.read()
     end
+    -- local printpath = ""
+    -- for i = 1, #path do
+    --     printpath = printpath .. " " .. path[i]
+    -- end
+    -- DebugPrint(printpath .. " | " .. distance)
     return path, distance
 end
 
@@ -214,6 +274,17 @@ function Find(table, value)
     return 0
 end
 
+function DebugPrint(message)
+    if debug then
+        if trigger ~= nil then
+            trigger.action.outText(message, 10, false)
+        else
+            print(message)
+        end
+    else
+    end
+end
+
 if debug then
     assert(GetIntersect({x = 1, z = 1}, {x = 10, z = 10}, {x = 0, z = 0}, {x = 9, z = 10}) == false)
     assert(GetIntersect({x = 1, z = 1}, {x = 10, z = 10}, {x = 10, z = 0}, {x = 0, z = 10}) == true)
@@ -223,10 +294,8 @@ if debug then
     assert(GetIntersect({x = 1, z = 1}, {x = 10, z = 10}, {x = 2, z = 0}, {x = 9, z = 10}) == true)
     assert(GetIntersect({x = 10, z = 1}, {x = 1, z = 10}, {x = 2, z = 0}, {x = 12, z = 12}) == true)
     assert(GetIntersect({x = 10, z = 1}, {x = 1, z = 10}, {x = 12, z = 2}, {x = 2, z = 12}) == false)
-else
-    DynamicBattle:generate('CombatZone')
 end
-
+DynamicBattle:generate('CombatZone')
 
 --[[
 
