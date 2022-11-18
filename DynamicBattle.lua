@@ -42,45 +42,58 @@ function DynamicBattle:generate(zonename)
             end
         end
     end
-
-    for outerkey, outerconnection in pairs(self.connections) do 
-        for innerkey, innerconnection in pairs(self.connections) do 
-            if innerkey > outerkey and CmpConnection(outerconnection, innerconnection) == 0 then
-                if GetIntersect(outerconnection.p1, outerconnection.p2, innerconnection.p1, innerconnection.p2) then
+    local lastvalue, n = #self.connections, #self.connections
+    trigger.action.outText(#self.connections .. " connections created", 10, false)
+    local delcount = 0
+    for outerkey, outerconnection in pairs(self.connections) do
+        for innerkey, innerconnection in pairs(self.connections) do
+            if innerkey > outerkey and self.connections[innerkey] ~= nil and self.connections[outerkey] ~= nil and CmpConnection(outerconnection, innerconnection) == 0 then
+                -- trigger.action.outText("valid to intersect compare", 10, false)
+                if GetIntersect(self.zones[outerconnection.p1].point, self.zones[outerconnection.p2].point, self.zones[innerconnection.p1].point, self.zones[innerconnection.p2].point) then
+                    -- trigger.action.outText(type(self.connections[outerkey]) .. type(outerconnection), 10, false)
+                    -- trigger.action.outText(type(self.connections[innerkey]) .. type(innerconnection), 10, false)
+                    -- trigger.action.outText("intersect detected", 10, false)
                     if outerconnection.d >= innerconnection.d then
-                        innerconnection = nil
+                        self.connections[outerkey] = nil
+                        -- trigger.action.outText(outerkey .. " deleted", 10, false)
                     else
-                        outerconnection = nil
+                        self.connections[innerkey] = nil
+                        -- trigger.action.outText(innerkey .. " deleted", 10, false)
                     end
+                    delcount = delcount + 1
                 end
             end
         end
     end
-
-    for index, connection in ipairs(self.connections) do
-        local path, distance = FindPath(connection.p1, connection.p2, self.connections, self.zones, false)
-        if distance * 1.5 < connection.d then
-            self.connections[index] = nil
+    trigger.action.outText(delcount .. " deleted", 10, false)
+    delcount = 0
+    for index, connection in pairs(self.connections) do
+        if self.connections[index] ~= nil then
+            local path, distance = FindPath(connection.p1, connection.p2, self.connections, self.zones, false)
+            trigger.action.outText(type(path), 10, false)
+            if distance ~= nil and distance * 1.5 < connection.d then
+                delcount = delcount + 1
+                self.connections[index] = nil
+            end
         end
     end
-
-    local lastvalue, n = #self.connections, #self.connections
-
+    trigger.action.outText(delcount .. " deleted", 10, false)
     for i = 1, n do
-        if self.connections[i - 1] == nil and i > 1 then
-            break
-        elseif self.connections[i] == nil then
+        if self.connections[i] == nil then
             for u = lastvalue, 1, -1 do
                 if u <= i then
                     break
                 elseif self.connections[u] ~= nil then
+                    -- trigger.action.outText("patching " .. u .. " to " .. i, 10, false)
                     self.connections[i] = self.connections[u]
                     self.connections[u] = nil
                     lastvalue = u
+                    break
                 end
             end
         end
     end
+    trigger.action.outText(#self.connections .. " connections left", 10, false)
     local drawid = 1
     trigger.action.outText("drawing", 10, false)
     for key, zone in pairs(self.zones) do
@@ -98,11 +111,11 @@ function FindPath(start, stop, connections, zones, directallowed)
     local selected, found = start, false
     local path = {}
     local distance = 0
-    while !found do
+    while not found do
         local best = { con = nil, weight = -1, d = 0}
         local weight
         for index, connection in ipairs(connections) do
-            if directallowed and not ((connection.p1 == start and connection.p2 == stop) or (connection.p2 == start and connection.p1 == stop)) then
+            if directallowed or not ((connection.p1 == start and connection.p2 == stop) or (connection.p2 == start and connection.p1 == stop)) then
                 if connection.p1 == selected then
                     weight = connection.d + GetV2Distance(zones[connection.p2].point, zones[stop].point)
                     if weight < best.weight or best.weight == -1 and Find(path, connection.p2) == 0 then
