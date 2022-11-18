@@ -18,28 +18,31 @@ function DynamicBattle:generate(zonename)
     local zonenum = 1
     -- trigger.action.outText("creating zones", 10, false)
     DebugPrint("creating zones")
---[[
+
     while trigger.misc.getZone(zonename .. zonenum) ~= nil do
         table.insert(self.zones, trigger.misc.getZone(zonename .. zonenum))
         zonenum = zonenum + 1
     end
-]]--
-    self.zones = {
-        {point = {x = -247702.09375, y = 0, z = 624390.625}, radius = 500.7864074707},
-        {point = {x = -245661.65625, y = 0, z = 623802.875}, radius = 1000.6583862305},
-        {point = {x = -243927.359375, y = 0, z = 620314.5}, radius = 1300.5815429688},
-        {point = {x = -241765.125, y = 0, z = 617048.375}, radius = 2300.3256835938},
-        {point = {x = -248186.53125, y = 0, z = 615831.375}, radius = 900.68402099609},
-        {point = {x = -248769.21875, y = 0, z = 609760.6875}, radius = 1400.5560302734},
-        {point = {x = -251630.359375, y = 0, z = 610257.875}, radius = 900.68402099609},
-        {point = {x = -254114, y = 0, z = 611357.5625}, radius = 600.76080322266},
-        {point = {x = -255117.203125, y = 0, z = 607210.1875}, radius = 1000.6583862305},
-        {point = {x = -252987.703125, y = 0, z = 606292.25}, radius = 800.70959472656},
-        {point = {x = -250523.890625, y = 0, z = 606794.5}, radius = 1500.5303955078},
-        {point = {x = -241161.953125, y = 0, z = 609933.4375}, radius = 1300.5815429688}
-    }
+
+    -- self.zones = {
+    --     {point = {x = -247702.09375, y = 0, z = 624390.625}, radius = 500.7864074707},
+    --     {point = {x = -245661.65625, y = 0, z = 623802.875}, radius = 1000.6583862305},
+    --     {point = {x = -243927.359375, y = 0, z = 620314.5}, radius = 1300.5815429688},
+    --     {point = {x = -241765.125, y = 0, z = 617048.375}, radius = 2300.3256835938},
+    --     {point = {x = -248186.53125, y = 0, z = 615831.375}, radius = 900.68402099609},
+    --     {point = {x = -248769.21875, y = 0, z = 609760.6875}, radius = 1400.5560302734},
+    --     {point = {x = -251630.359375, y = 0, z = 610257.875}, radius = 900.68402099609},
+    --     {point = {x = -254114, y = 0, z = 611357.5625}, radius = 600.76080322266},
+    --     {point = {x = -255117.203125, y = 0, z = 607210.1875}, radius = 1000.6583862305},
+    --     {point = {x = -252987.703125, y = 0, z = 606292.25}, radius = 800.70959472656},
+    --     {point = {x = -250523.890625, y = 0, z = 606794.5}, radius = 1500.5303955078},
+    --     {point = {x = -241161.953125, y = 0, z = 609933.4375}, radius = 1300.5815429688}
+    -- }
     -- trigger.action.outText(zonenum .. " zones found", 10, false)
     DebugPrint(#self.zones .. " zones found")
+    for i = 1, #self.zones do
+        self.zones[i].coalition = 0
+    end
     DebugPrint("creating connections")
     -- trigger.action.outText("creating connections", 10, false)
     for outerkey, outerzone in pairs(self.zones) do
@@ -139,14 +142,30 @@ function DynamicBattle:generate(zonename)
     DebugPrint(#self.connections .. " connections left")
     local drawid = 1
     -- trigger.action.outText("drawing", 10, false)
-    -- for key, zone in pairs(self.zones) do
-    --     drawid = drawid + key
-    --     trigger.action.circleToAll(-1, drawid, zone.point, zone.radius, {1, 0, 0, 1}, {1, 0, 0, 0.2}, 1, true)
-    -- end
-    -- for key, connection in pairs(self.connections) do
-    --     drawid = drawid + key
-    --     trigger.action.lineToAll(-1, drawid, self.zones[connection.p1].point, self.zones[connection.p2].point, {1, 0, 0, 1}, 1, true)
-    -- end
+    DebugPrint("drawing")
+    for key, zone in pairs(self.zones) do
+        drawid = drawid + key
+        self.zones[key].drawid = drawid
+        trigger.action.circleToAll(-1, drawid, zone.point, zone.radius, {0.3, 0.3, 0.3, 1}, {0.3, 0.3, 0.3, 0.2}, 1, true)
+    end
+    for key, connection in pairs(self.connections) do
+        drawid = drawid + key
+        local p1 = self.zones[connection.p1]
+        local p2 = self.zones[connection.p2]
+        local v = GetV2(p1.point, p2.point)
+        local unit = SkalarV2(v, 1/GetV2Magnitude(v))
+        local offset1 = AddV2(SkalarV2(unit, p1.radius), p1.point)
+        v = GetV2(p2.point, p1.point)
+        unit = SkalarV2(v, 1/GetV2Magnitude(v))
+        local offset2 = AddV2(SkalarV2(unit, p2.radius), p2.point)
+        -- DebugPrint(p1.point.x .. " | " .. p1.point.z)
+        -- DebugPrint(offset1.x .. " | " .. offset1.z)
+        trigger.action.lineToAll(-1, drawid, offset1, offset2, {0.3, 0.3, 0.3, 1}, 1, true)
+    end
+    -- timer.scheduleFunction(RemoveZones, self.zones, timer.getTime() + 10)
+    -- timer.scheduleFunction(DrawZones, self.zones, timer.getTime() + 20)
+
+    RenderZones(self.zones)
 end
 
 function FindPath(start, stop, connections, zones, directallowed)
@@ -254,6 +273,10 @@ function AddV2(V1, V2)
     return {x = V1.x + V2.x, z = V1.z + V2.z}
 end
 
+function SkalarV2(V, S)
+    return {x = V.x * S, z = V.z * S}
+end
+
 function CmpConnection(C1, C2)
     local commonpoints = 0
     if C1.p1 == C2.p1 or C1.p1 == C2.p2 then
@@ -282,6 +305,23 @@ function DebugPrint(message)
             print(message)
         end
     else
+    end
+end
+
+function RenderZones(zones)
+    -- DebugPrint("drawing")
+    for i = 1, #zones do
+        local color = {0.3, 0.3, 0.3, 1}
+        local fill = {0.3, 0.3, 0.3, 0.2}
+        if zones[i].coalition == 1 then
+            color = {1, 0, 0, 1}
+            fill = {1, 0, 0, 0.2}
+        elseif zones[i].coalition == 2 then
+            color = {0, 0, 1, 1}
+            fill = {0, 0, 1, 0.2}
+        end
+        trigger.action.setMarkupColor(zones[i].drawid, color)
+        trigger.action.setMarkupColorFill(zones[i].drawid, fill)
     end
 end
 
