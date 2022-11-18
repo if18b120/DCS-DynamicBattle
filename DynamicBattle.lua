@@ -20,6 +20,9 @@ function DynamicBattle:generate(zonename)
         table.insert(self.zones, trigger.misc.getZone(zonename .. zonenum))
         zonenum = zonenum + 1
     end
+    for i = 1, #self.zones do
+        env.info(self.zones[i].point.x .. " " .. self.zones[i].point.y .. " " .. self.zones[i].point.z .. " | " .. self.zones[i].radius, false)
+    end
     trigger.action.outText(zonenum .. " zones found", 10, false)
     trigger.action.outText("creating connections", 10, false)
     for outerkey, outerzone in pairs(self.zones) do
@@ -223,3 +226,21 @@ if debug then
 else
     DynamicBattle:generate('CombatZone')
 end
+
+
+--[[
+
+2022-11-18 10:30:20.067 INFO    SCRIPTING (Main): -247702.09375 0 624390.625 | 500.7864074707
+2022-11-18 10:30:20.067 INFO    SCRIPTING (Main): -245661.65625 0 623802.875 | 1000.6583862305
+2022-11-18 10:30:20.067 INFO    SCRIPTING (Main): -243927.359375 0 620314.5 | 1300.5815429688
+2022-11-18 10:30:20.067 INFO    SCRIPTING (Main): -241765.125 0 617048.375 | 2300.3256835938
+2022-11-18 10:30:20.067 INFO    SCRIPTING (Main): -248186.53125 0 615831.375 | 900.68402099609
+2022-11-18 10:30:20.067 INFO    SCRIPTING (Main): -248769.21875 0 609760.6875 | 1400.5560302734
+2022-11-18 10:30:20.067 INFO    SCRIPTING (Main): -251630.359375 0 610257.875 | 900.68402099609
+2022-11-18 10:30:20.067 INFO    SCRIPTING (Main): -254114 0 611357.5625 | 600.76080322266
+2022-11-18 10:30:20.068 INFO    SCRIPTING (Main): -255117.203125 0 607210.1875 | 1000.6583862305
+2022-11-18 10:30:20.068 INFO    SCRIPTING (Main): -252987.703125 0 606292.25 | 800.70959472656
+2022-11-18 10:30:20.068 INFO    SCRIPTING (Main): -250523.890625 0 606794.5 | 1500.5303955078
+2022-11-18 10:30:20.068 INFO    SCRIPTING (Main): -241161.953125 0 609933.4375 | 1300.5815429688
+
+]]--
