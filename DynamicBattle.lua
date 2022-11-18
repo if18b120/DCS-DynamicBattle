@@ -109,10 +109,10 @@ function DynamicBattle:generate(zonename)
         if self.connections[index] ~= nil then
             local path, distance = FindPath(connection.p1, connection.p2, self.connections, self.zones, false)
             -- trigger.action.outText(type(path), 10, false)
-            DebugPrint(distance)
-            DebugPrint(connection.d)
-            DebugPrint(" ")
-            if distance ~= nil and distance < connection.d * 1.5 then
+            -- DebugPrint(distance)
+            -- DebugPrint(connection.d)
+            -- DebugPrint(" ")
+            if distance ~= nil and distance < connection.d * 1.2 then
                 delcount = delcount + 1
                 self.connections[index] = nil
             end
